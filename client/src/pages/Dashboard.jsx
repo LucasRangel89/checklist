@@ -132,28 +132,35 @@ export default function Dashboard() {
             Olá, {user?.name || 'Doutor(a)'}! 👋
           </h1>
           <p className="text-sm text-slate-300 max-w-2xl">
-            Escolha uma especialidade abaixo para praticar estações simuladas e revisar o{' '}
+            Escolha uma especialidade abaixo para praticar estações simuladas ou consulte os{' '}
             <strong className="text-white font-semibold">
-              Padrão Esperado de Procedimento (PEP)
+              Esqueletos em Branco
             </strong>{' '}
-            do Revalida/INEP.
+            de cada área para orientar seus estudos.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            to="/skeletons"
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2.5 text-xs font-extrabold text-slate-950 shadow-md transition-all"
+          >
+            <Compass className="h-4 w-4" />
+            <span>Esqueletos em Branco (Guia)</span>
+          </Link>
           <Link
             to="/analytics"
             className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 px-4 py-2.5 text-xs font-bold text-white transition-all"
           >
             <BarChart3 className="h-4 w-4 text-indigo-300" />
-            <span>Ver Análises</span>
+            <span>Análises</span>
           </Link>
           <Link
             to="/history"
             className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all"
           >
             <History className="h-4 w-4" />
-            <span>Histórico Completo</span>
+            <span>Histórico</span>
           </Link>
         </div>
       </div>
@@ -190,16 +197,22 @@ export default function Dashboard() {
 
       {/* 7 Specialties Grid */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-xl font-extrabold text-slate-900">
               Especialidades do Revalida (7)
             </h2>
             <p className="text-sm text-slate-500">
-              Clique em uma especialidade para visualizar seu esqueleto OSCE e praticar estações clínicas
+              Clique em uma especialidade para praticar estações ou abra seu esqueleto em branco
             </p>
           </div>
-          <Badge variant="indigo">{specialties.length} áreas médicas</Badge>
+          <Link
+            to="/skeletons"
+            className="inline-flex items-center gap-1.5 text-xs font-extrabold text-indigo-600 hover:text-indigo-800"
+          >
+            <Compass className="h-4 w-4" />
+            <span>Ver todos os 7 Esqueletos em Branco →</span>
+          </Link>
         </div>
 
         {specialties.length === 0 ? (
@@ -218,9 +231,8 @@ export default function Dashboard() {
               const attemptsCount = Number(sp.total_attempts) || 0;
 
               return (
-                <Link
+                <div
                   key={sp.id}
-                  to={`/specialty/${sp.slug}`}
                   className="card group relative flex flex-col justify-between overflow-hidden p-6 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-lg transition-all"
                 >
                   {/* Top color bar */}
@@ -231,7 +243,8 @@ export default function Dashboard() {
 
                   <div>
                     <div className="flex items-start justify-between gap-3">
-                      <div
+                      <Link
+                        to={`/specialty/${sp.slug}`}
                         className="flex h-12 w-12 items-center justify-center rounded-2xl shadow-xs transition-transform group-hover:scale-105"
                         style={{
                           backgroundColor: `${sp.color}15`,
@@ -239,7 +252,7 @@ export default function Dashboard() {
                         }}
                       >
                         <SpecialtyIcon name={sp.icon} className="h-6 w-6" />
-                      </div>
+                      </Link>
 
                       <div className="flex items-center gap-2">
                         {sp.avg_score != null ? (
@@ -262,22 +275,32 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    <h3 className="mt-4 text-lg font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                      {sp.name}
-                    </h3>
+                    <Link to={`/specialty/${sp.slug}`}>
+                      <h3 className="mt-4 text-lg font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                        {sp.name}
+                      </h3>
+                    </Link>
                     <p className="mt-1.5 text-xs leading-relaxed text-slate-600 line-clamp-2">
                       {sp.description}
                     </p>
 
-                    {/* Mini Skeleton Preview */}
-                    <div className="mt-4 rounded-xl bg-slate-50 border border-slate-100 p-2.5">
-                      <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
-                        Esqueleto da Especialidade:
-                      </span>
+                    {/* Mini Skeleton Preview + Link to Full Blank Skeleton */}
+                    <Link
+                      to={`/skeletons?area=${sp.slug}`}
+                      className="mt-4 block rounded-xl bg-slate-50 hover:bg-indigo-50/70 border border-slate-100 hover:border-indigo-200 p-2.5 transition-colors"
+                    >
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">
+                          Esqueleto em Branco (Guia):
+                        </span>
+                        <span className="text-[10px] font-bold text-indigo-600 underline">
+                          Abrir folha limpa →
+                        </span>
+                      </div>
                       <p className="text-[11px] font-medium text-slate-700 line-clamp-2">
                         {sp.skeleton}
                       </p>
-                    </div>
+                    </Link>
                   </div>
 
                   {/* Progress & Stats Footer */}
@@ -304,12 +327,15 @@ export default function Dashboard() {
                         {totalSt} {totalSt === 1 ? 'estação' : 'estações'} •{' '}
                         {attemptsCount} {attemptsCount === 1 ? 'tentativa' : 'tentativas'}
                       </span>
-                      <span className="inline-flex items-center gap-1 font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
-                        Acessar <ArrowRight className="h-3.5 w-3.5" />
-                      </span>
+                      <Link
+                        to={`/specialty/${sp.slug}`}
+                        className="inline-flex items-center gap-1 font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform"
+                      >
+                        Estações <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
                     </div>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
@@ -322,36 +348,23 @@ export default function Dashboard() {
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md">
             <Compass className="h-6 w-6" />
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-extrabold text-slate-900">
-                O que é o &ldquo;Esqueleto OSCE&rdquo; e como funciona a pontuação no Revalida?
-              </h3>
-              <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
+          <div className="space-y-3 flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-extrabold text-slate-900">
+                  Guia de Esqueletos em Branco (Orientação de Estudos OSCE)
+                </h3>
+                <Sparkles className="h-4 w-4 text-indigo-600 shrink-0" />
+              </div>
+              <Link to="/skeletons" className="btn-primary text-xs py-2 px-3.5">
+                <Compass className="h-4 w-4" />
+                <span>Acessar Guia de Esqueletos em Branco</span>
+              </Link>
             </div>
             <p className="text-sm leading-relaxed text-slate-700">
-              Na segunda etapa do Revalida (INEP), o candidato tem <strong>10 minutos por estação</strong> para realizar tarefas clínicas avaliadas por um examinador com base no{' '}
-              <strong>Padrão Esperado de Procedimento (PEP)</strong>. Cada grande área médica possui um{' '}
-              <em>esqueleto mental estruturado</em> — uma sequência lógica que evita esquecer etapas críticas sob pressão (como apresentação, higienização das mãos, SIFE na MFC ou ABCDE na Cirurgia).
+              Na segunda etapa do Revalida (INEP), o candidato tem <strong>10 minutos por estação</strong> para realizar tarefas clínicas avaliadas pelo{' '}
+              <strong>Padrão Esperado de Procedimento (PEP)</strong>. Acesse a aba <strong>Esqueletos OSCE (Guia)</strong> para visualizar a estrutura passo a passo em branco de cada uma das 7 especialidades, sem nada preenchido, ideal para treino mental e revisão rápida.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
-              <div className="rounded-xl bg-white border border-emerald-200 px-3 py-2 text-xs">
-                <span className="font-bold text-emerald-700 block">OK (100% do peso)</span>
-                <span className="text-slate-600">Executado integralmente conforme o PEP</span>
-              </div>
-              <div className="rounded-xl bg-white border border-amber-200 px-3 py-2 text-xs">
-                <span className="font-bold text-amber-700 block">Parcial (50% do peso)</span>
-                <span className="text-slate-600">Realizado de forma incompleta</span>
-              </div>
-              <div className="rounded-xl bg-white border border-rose-200 px-3 py-2 text-xs">
-                <span className="font-bold text-rose-700 block">Erro (0% do peso)</span>
-                <span className="text-slate-600">Conduta incorreta ou fora da técnica</span>
-              </div>
-              <div className="rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs">
-                <span className="font-bold text-slate-700 block">Omitido (0% do peso)</span>
-                <span className="text-slate-600">Item esquecido ou não verbalizado</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

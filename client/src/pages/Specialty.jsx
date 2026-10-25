@@ -172,7 +172,6 @@ export default function Specialty() {
       return;
     }
 
-    // Optimistic update
     const previous = stations;
     setStations((prev) => prev.filter((s) => s.id !== stationId));
 
@@ -208,7 +207,7 @@ export default function Specialty() {
   return (
     <div className="space-y-8">
       {/* Breadcrumb */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/"
           className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors"
@@ -217,14 +216,24 @@ export default function Specialty() {
           <span>Voltar para Dashboard</span>
         </Link>
 
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          className="btn-primary"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Nova Estação</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            to={`/skeletons?area=${specialty.slug}`}
+            className="btn-secondary text-xs py-2.5 px-3.5"
+          >
+            <Compass className="h-4 w-4 text-indigo-600" />
+            <span>Ver Esqueleto em Branco Completo</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="btn-primary"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Nova Estação</span>
+          </button>
+        </div>
       </div>
 
       {/* Specialty Header + Skeleton Box */}
@@ -260,10 +269,18 @@ export default function Specialty() {
           </div>
 
           {/* Highlighted Skeleton Box */}
-          <div className="rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50/90 via-blue-50/70 to-indigo-50/40 p-5">
-            <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-indigo-800 mb-3">
-              <Compass className="h-4 w-4 text-indigo-600" />
-              <span>Esqueleto Mental da Especialidade (Sequência Esperada no OSCE)</span>
+          <div className="rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50/90 via-blue-50/70 to-indigo-50/40 p-5 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-indigo-800">
+                <Compass className="h-4 w-4 text-indigo-600" />
+                <span>Esqueleto Mental da Especialidade (Sequência Esperada no OSCE)</span>
+              </div>
+              <Link
+                to={`/skeletons?area=${specialty.slug}`}
+                className="text-xs font-extrabold text-indigo-700 hover:text-indigo-900 underline"
+              >
+                Abrir Guia de Estudo em Branco detalhado →
+              </Link>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
