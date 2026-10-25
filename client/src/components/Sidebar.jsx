@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
+  Compass,
   History,
   BarChart3,
   Settings,
@@ -26,6 +27,7 @@ import { useToast } from './ui';
 
 const MAIN_NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/skeletons', label: 'Esqueletos OSCE (Guia)', icon: Compass },
   { to: '/history', label: 'Histórico de Práticas', icon: History },
   { to: '/analytics', label: 'Análises e Desempenho', icon: BarChart3 },
   { to: '/settings', label: 'Backup & Ajustes', icon: Settings },
@@ -183,9 +185,18 @@ export default function Sidebar({ open, onClose }) {
 
           {/* 7 Specialties Quick Access */}
           <div>
-            <p className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Especialidades OSCE (7)
-            </p>
+            <div className="flex items-center justify-between px-3 mb-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Especialidades OSCE (7)
+              </p>
+              <Link
+                to="/skeletons"
+                onClick={onClose}
+                className="text-[10px] font-bold text-indigo-600 hover:underline"
+              >
+                Ver Esqueletos
+              </Link>
+            </div>
             <nav className="space-y-1">
               {QUICK_SPECIALTIES.map((sp) => {
                 const Icon = sp.icon;

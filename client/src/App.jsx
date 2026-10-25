@@ -4,6 +4,7 @@ import { AuthProvider } from './lib/auth';
 import { ToastProvider } from './components/ui';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
+import Skeletons from './pages/Skeletons';
 import Specialty from './pages/Specialty';
 import Station from './pages/Station';
 import Attempt from './pages/Attempt';
@@ -46,6 +47,7 @@ export default function App() {
 
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />
+              <Route path="skeletons" element={<Skeletons />} />
               <Route path="specialty/:slug" element={<Specialty />} />
               <Route path="station/:id" element={<Station />} />
               <Route path="attempt/:id" element={<Attempt />} />

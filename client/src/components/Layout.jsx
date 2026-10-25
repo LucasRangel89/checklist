@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Outlet, NavLink } from 'react-router-dom';
 import {
   Menu,
   Activity,
   LayoutDashboard,
+  Compass,
   History,
   BarChart3,
   Settings,
-  Stethoscope,
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 
 const MOBILE_TABS = [
   { to: '/', label: 'Painel', icon: LayoutDashboard, end: true },
-  { to: '/specialty/clinica-medica', label: 'Estações', icon: Stethoscope },
+  { to: '/skeletons', label: 'Esqueletos', icon: Compass },
   { to: '/history', label: 'Histórico', icon: History },
   { to: '/analytics', label: 'Análises', icon: BarChart3 },
   { to: '/settings', label: 'Ajustes', icon: Settings },
@@ -21,7 +21,6 @@ const MOBILE_TABS = [
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
@@ -59,25 +58,19 @@ export default function Layout() {
         <nav className="fixed bottom-0 inset-x-0 z-30 flex h-16 items-center justify-around border-t border-slate-200 bg-white/95 px-2 backdrop-blur-md lg:hidden">
           {MOBILE_TABS.map((tab) => {
             const Icon = tab.icon;
-            const isSpecialtyActive =
-              tab.to.startsWith('/specialty/') &&
-              (location.pathname.startsWith('/specialty/') ||
-                location.pathname.startsWith('/station/') ||
-                location.pathname.startsWith('/attempt/'));
 
             return (
               <NavLink
                 key={tab.to}
                 to={tab.to}
                 end={tab.end}
-                className={({ isActive }) => {
-                  const active = isActive || isSpecialtyActive;
-                  return `flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-bold transition-all ${
-                    active
+                className={({ isActive }) =>
+                  `flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-bold transition-all ${
+                    isActive
                       ? 'text-indigo-600'
                       : 'text-slate-500 hover:text-slate-900'
-                  }`;
-                }}
+                  }`
+                }
               >
                 <Icon className="h-5 w-5" />
                 <span>{tab.label}</span>
