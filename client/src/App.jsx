@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './lib/auth';
-import { ToastProvider, Spinner } from './components/ui';
+import { AuthProvider } from './lib/auth';
+import { ToastProvider } from './components/ui';
 import Layout from './components/Layout';
-import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Specialty from './pages/Specialty';
 import Station from './pages/Station';
@@ -16,8 +15,6 @@ function PathSync() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // If user navigated to a non-root path without hash (e.g. /login, /analytics on localhost),
-    // sync it into HashRouter automatically
     const { pathname, hash } = window.location;
     if (
       (!hash || hash === '#/' || hash === '#') &&
@@ -28,31 +25,13 @@ function PathSync() {
       !pathname.endsWith('/checklist/')
     ) {
       const cleanPath = pathname.replace(/^\/checklist/, '') || '/';
-      if (cleanPath !== '/') {
+      if (cleanPath !== '/' && cleanPath !== '/login') {
         navigate(cleanPath, { replace: true });
       }
     }
   }, [navigate]);
 
   return null;
-}
-
-function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <Spinner size="lg" label="Carregando Revalida Tracker..." />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return children;
 }
 
 export default function App() {
@@ -62,16 +41,10 @@ export default function App() {
       <ToastProvider>
         <AuthProvider>
           <Routes>
-            <Route path="/login" element={<Login />} />
+            {/* Redirect /login directly to Dashboard (no login wall) */}
+            <Route path="/login" element={<Navigate to="/" replace />} />
 
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
+            <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="specialty/:slug" element={<Specialty />} />
               <Route path="station/:id" element={<Station />} />

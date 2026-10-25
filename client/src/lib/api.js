@@ -3,7 +3,13 @@ import { offlineApi, getOfflineStats, resetOfflineDb } from './offlineDb';
 const TOKEN_KEY = 'revalida_tracker_token';
 const FORCE_OFFLINE_KEY = 'revalida_force_offline';
 
-let backendReachable = true;
+// Detect static hosts (like GitHub Pages) where no Node backend exists
+const isStaticHost =
+  typeof window !== 'undefined' &&
+  (window.location.hostname.endsWith('github.io') ||
+    window.location.protocol === 'file:');
+
+let backendReachable = !isStaticHost;
 const statusListeners = new Set();
 
 function notifyListeners() {
@@ -19,7 +25,7 @@ function notifyListeners() {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
-    backendReachable = true;
+    if (!isStaticHost) backendReachable = true;
     notifyListeners();
   });
   window.addEventListener('offline', () => {
@@ -28,6 +34,7 @@ if (typeof window !== 'undefined') {
 }
 
 export function isForceOffline() {
+  if (isStaticHost) return true;
   return localStorage.getItem(FORCE_OFFLINE_KEY) === 'true';
 }
 
@@ -36,20 +43,22 @@ export function setForceOffline(val) {
     localStorage.setItem(FORCE_OFFLINE_KEY, 'true');
   } else {
     localStorage.removeItem(FORCE_OFFLINE_KEY);
-    backendReachable = true;
+    if (!isStaticHost) backendReachable = true;
   }
   notifyListeners();
 }
 
 export function getConnectionState() {
-  const browserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+  const browserOnline =
+    typeof navigator !== 'undefined' ? navigator.onLine : true;
   const forced = isForceOffline();
-  const usingOffline = forced || !browserOnline || !backendReachable;
+  const usingOffline = isStaticHost || forced || !browserOnline || !backendReachable;
   return {
     online: !usingOffline,
     forcedOffline: forced,
     browserOnline,
     backendReachable,
+    isStaticHost,
     stats: getOfflineStats(),
   };
 }
@@ -62,7 +71,7 @@ export function subscribeConnectionStatus(cb) {
 export { getOfflineStats, resetOfflineDb };
 
 export function getStoredToken() {
-  return localStorage.getItem(TOKEN_KEY);
+  return localStorage.getItem(TOKEN_KEY) || 'local-device-token';
 }
 
 export function setStoredToken(token) {
@@ -76,7 +85,7 @@ export function setStoredToken(token) {
 async function request(path, options = {}, offlineFallbackFn = null) {
   const state = getConnectionState();
 
-  // If in offline mode (forced, browser offline, or backend unreachable), use local DB directly
+  // When running on GitHub Pages / static host / offline mode, execute locally in 0ms
   if (!state.online && offlineFallbackFn) {
     return offlineFallbackFn();
   }
@@ -93,7 +102,7 @@ async function request(path, options = {}, offlineFallbackFn = null) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500);
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
 
     const response = await fetch(`/api${path}`, {
       ...options,
@@ -102,41 +111,20 @@ async function request(path, options = {}, offlineFallbackFn = null) {
     });
     clearTimeout(timeoutId);
 
-    // If Vite/proxy returns 502/503/504 because backend server is off, fallback to offlineDb
-    if ([502, 503, 504].includes(response.status) && offlineFallbackFn) {
-      backendReachable = false;
-      notifyListeners();
-      return offlineFallbackFn();
-    }
-
-    let data = null;
     const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      const text = await response.text();
-      data = { message: text };
-    }
 
-    if (!response.ok) {
-      // If token is an offline-generated token and backend returned 401, use offline fallback
-      if (
-        response.status === 401 &&
-        token &&
-        token.startsWith('offline-jwt-token') &&
-        offlineFallbackFn
-      ) {
+    // If static server returned HTML (like GitHub Pages 404) or any non-OK status,
+    // mark backend as unreachable and fall back to local offlineDb seamlessly
+    if (!response.ok || !contentType.includes('application/json')) {
+      if (offlineFallbackFn) {
+        backendReachable = false;
+        notifyListeners();
         return offlineFallbackFn();
       }
-
-      const error = new Error(
-        (data && (data.error || data.message)) ||
-          `Erro na requisição (${response.status})`
-      );
-      error.status = response.status;
-      error.data = data;
-      throw error;
+      throw new Error(`Erro na requisição (${response.status})`);
     }
+
+    const data = await response.json();
 
     if (!backendReachable) {
       backendReachable = true;
@@ -145,12 +133,7 @@ async function request(path, options = {}, offlineFallbackFn = null) {
 
     return data;
   } catch (err) {
-    // If it's an explicit HTTP 4xx error thrown above, rethrow it
-    if (err.status && err.status >= 400 && err.status < 500) {
-      throw err;
-    }
-
-    // Network error / offline / server down -> fallback to local offlineDb seamlessly!
+    // Always fall back to local offlineDb on any error
     if (offlineFallbackFn) {
       backendReachable = false;
       notifyListeners();
@@ -161,48 +144,44 @@ async function request(path, options = {}, offlineFallbackFn = null) {
 }
 
 export const api = {
-  // Auth
-  login: async (credentials) => {
-    const res = await request(
+  // Auth / Profile (local-first, no login blocker)
+  login: async (credentials) =>
+    request(
       '/auth/login',
       {
         method: 'POST',
         body: JSON.stringify(credentials),
       },
       () => offlineApi.login(credentials)
-    );
-    return res;
-  },
+    ),
 
-  register: async (payload) => {
-    const res = await request(
+  register: async (payload) =>
+    request(
       '/auth/register',
       {
         method: 'POST',
         body: JSON.stringify(payload),
       },
       () => offlineApi.register(payload)
-    );
-    return res;
-  },
+    ),
 
   me: () => request('/auth/me', {}, () => offlineApi.me()),
 
   updateProfile: async (payload) => {
-    const res = await request(
-      '/auth/me',
-      {
-        method: 'PUT',
-        body: JSON.stringify(payload),
-      },
-      () => offlineApi.updateProfile(payload)
-    );
+    const localUpdated = offlineApi.updateProfile(payload);
     try {
-      offlineApi.updateProfile(payload);
+      await request(
+        '/auth/me',
+        {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        },
+        () => localUpdated
+      );
     } catch {
       // ignore
     }
-    return res;
+    return localUpdated;
   },
 
   // Specialties
@@ -220,21 +199,15 @@ export const api = {
   getStation: (id) =>
     request(`/stations/${id}`, {}, () => offlineApi.getStation(id)),
 
-  createStation: async (payload) => {
-    const state = getConnectionState();
-    if (!state.online) {
-      return offlineApi.createStation(payload);
-    }
-    const res = await request(
+  createStation: async (payload) =>
+    request(
       '/stations',
       {
         method: 'POST',
         body: JSON.stringify(payload),
       },
       () => offlineApi.createStation(payload)
-    );
-    return res;
-  },
+    ),
 
   updateStation: async (id, payload) =>
     request(
@@ -315,7 +288,6 @@ export const api = {
       },
       () => offlineApi.createAttempt(payload)
     );
-    // Mirror attempt locally so offline history also stays updated
     try {
       offlineApi.createAttempt(payload);
     } catch {

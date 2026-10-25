@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   History,
   BarChart3,
   Settings,
-  LogOut,
   Activity,
   X,
   Stethoscope,
@@ -15,15 +14,13 @@ import {
   Users,
   Brain,
   Siren,
-  Wifi,
-  WifiOff,
+  HardDrive,
   Smartphone,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import {
   getConnectionState,
   subscribeConnectionStatus,
-  setForceOffline,
 } from '../lib/api';
 import { useToast } from './ui';
 
@@ -31,7 +28,7 @@ const MAIN_NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/history', label: 'Histórico de Práticas', icon: History },
   { to: '/analytics', label: 'Análises e Desempenho', icon: BarChart3 },
-  { to: '/settings', label: 'Configurações', icon: Settings },
+  { to: '/settings', label: 'Backup & Ajustes', icon: Settings },
 ];
 
 const QUICK_SPECIALTIES = [
@@ -45,7 +42,7 @@ const QUICK_SPECIALTIES = [
 ];
 
 export default function Sidebar({ open, onClose }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const toast = useToast();
 
@@ -64,18 +61,6 @@ export default function Sidebar({ open, onClose }) {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
     };
   }, []);
-
-  const handleToggleOffline = () => {
-    const next = !connState.forcedOffline;
-    setForceOffline(next);
-    if (next) {
-      toast.info(
-        'Modo 100% Offline ativado! Todos os dados estão rodando localmente no dispositivo.'
-      );
-    } else {
-      toast.success('Modo Online reconectado.');
-    }
-  };
 
   const handleInstallPwa = async () => {
     if (deferredPrompt) {
@@ -137,32 +122,21 @@ export default function Sidebar({ open, onClose }) {
           </button>
         </div>
 
-        {/* Offline / Online Status & PWA Install Bar */}
+        {/* Local Storage Status & PWA Install Bar */}
         <div className="px-3 pt-3 space-y-2">
-          <button
-            type="button"
-            onClick={handleToggleOffline}
-            className={`w-full flex items-center justify-between rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
-              connState.online
-                ? 'border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100/70'
-                : 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
-            }`}
-            title="Clique para alternar entre Modo Online e Modo 100% Offline"
+          <Link
+            to="/settings"
+            onClick={onClose}
+            className="w-full flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100/70 transition-all"
           >
             <span className="flex items-center gap-2">
-              {connState.online ? (
-                <Wifi className="h-3.5 w-3.5 text-emerald-600" />
-              ) : (
-                <WifiOff className="h-3.5 w-3.5 text-amber-600" />
-              )}
-              <span>
-                {connState.online ? 'Online (Offline Pronto)' : 'Modo 100% Offline'}
-              </span>
+              <HardDrive className="h-3.5 w-3.5 text-emerald-600" />
+              <span>Salvo no Dispositivo</span>
             </span>
             <span className="rounded-md bg-white/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
-              Alternar
+              {connState.stats?.stations || 16} estações
             </span>
-          </button>
+          </Link>
 
           {deferredPrompt && (
             <button
@@ -248,30 +222,26 @@ export default function Sidebar({ open, onClose }) {
 
         {/* User Footer */}
         <div className="border-t border-slate-100 bg-slate-50/60 p-4">
-          <div className="flex items-center justify-between gap-2">
+          <Link
+            to="/settings"
+            onClick={onClose}
+            className="flex items-center justify-between gap-2 rounded-xl p-1 hover:bg-slate-100 transition-colors"
+          >
             <div className="flex items-center gap-3 min-w-0">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
                 {initials}
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-slate-900">
-                  {user?.name || 'Estudante'}
+                  {user?.name || 'Estudante Revalida'}
                 </p>
                 <p className="truncate text-xs text-slate-500">
-                  {user?.email || ''}
+                  Perfil Local • Backup JSON
                 </p>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={logout}
-              title="Sair da conta"
-              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
-          </div>
+            <Settings className="h-4 w-4 text-slate-400 shrink-0" />
+          </Link>
         </div>
       </aside>
     </>

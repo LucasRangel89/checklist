@@ -22,28 +22,31 @@ export function verifyToken(token) {
 
 export function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization || '';
-  if (!authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token de autenticação não fornecido.' });
-  }
-
-  const token = authHeader.slice(7).trim();
-  if (!token) {
-    return res.status(401).json({ error: 'Token de autenticação inválido.' });
-  }
-
-  try {
-    const payload = verifyToken(token);
-    const user = db
-      .prepare('SELECT id, name, email, created_at FROM users WHERE id = ?')
-      .get(payload.id);
-
-    if (!user) {
-      return res.status(401).json({ error: 'Usuário não encontrado ou sessão expirada.' });
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    try {
+      const payload = verifyToken(token);
+      const user = db
+        .prepare('SELECT id, name, email, created_at FROM users WHERE id = ?')
+        .get(payload.id);
+      if (user) {
+        req.user = user;
+        return next();
+      }
+    } catch {
+      // Fall back to default local user below
     }
-
-    req.user = user;
-    next();
-  } catch (err) {
-    return res.status(401).json({ error: 'Token inválido ou expirado.' });
   }
+
+  // Fallback to default local user so the app works without requiring login/password
+  const defaultUser = db
+    .prepare('SELECT id, name, email, created_at FROM users ORDER BY id ASC LIMIT 1')
+    .get();
+
+  req.user = defaultUser || {
+    id: 1,
+    name: 'Dra. Ana Beatriz',
+    email: 'demo@revalida.app',
+  };
+  next();
 }
