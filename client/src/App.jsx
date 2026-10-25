@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
 import { ToastProvider, Spinner } from './components/ui';
 import Layout from './components/Layout';
@@ -12,13 +12,38 @@ import History from './pages/History';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 
+function PathSync() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // If user navigated to a non-root path without hash (e.g. /login, /analytics on localhost),
+    // sync it into HashRouter automatically
+    const { pathname, hash } = window.location;
+    if (
+      (!hash || hash === '#/' || hash === '#') &&
+      pathname &&
+      pathname !== '/' &&
+      !pathname.endsWith('/index.html') &&
+      !pathname.endsWith('/checklist') &&
+      !pathname.endsWith('/checklist/')
+    ) {
+      const cleanPath = pathname.replace(/^\/checklist/, '') || '/';
+      if (cleanPath !== '/') {
+        navigate(cleanPath, { replace: true });
+      }
+    }
+  }, [navigate]);
+
+  return null;
+}
+
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <Spinner size="lg" label="Verificando sessão autenticada..." />
+        <Spinner size="lg" label="Carregando Revalida Tracker..." />
       </div>
     );
   }
@@ -32,7 +57,8 @@ function ProtectedRoute({ children }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
+      <PathSync />
       <ToastProvider>
         <AuthProvider>
           <Routes>
@@ -59,6 +85,6 @@ export default function App() {
           </Routes>
         </AuthProvider>
       </ToastProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
