@@ -1,4 +1,4 @@
-const CACHE_NAME = 'revalida-tracker-pwa-v2';
+const CACHE_NAME = 'revalida-tracker-pwa-v3';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -32,7 +32,6 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
 
-  // Network-first for API requests (with cache fallback for offline viewing)
   if (url.pathname.includes('/api/')) {
     event.respondWith(
       fetch(request)
@@ -48,7 +47,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for static assets and SPA navigation
   event.respondWith(
     caches.match(request).then((cached) => {
       const networkFetch = fetch(request)
