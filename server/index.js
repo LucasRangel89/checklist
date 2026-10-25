@@ -52,12 +52,19 @@ app.use('/api/*', (req, res) => {
   res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` });
 });
 
-// Serve frontend build in production if client/dist exists
+// Serve frontend build in production (from client/dist or docs/)
 const clientDistPath = path.resolve(__dirname, '../client/dist');
-if (fs.existsSync(clientDistPath)) {
-  app.use(express.static(clientDistPath));
+const docsPath = path.resolve(__dirname, '../docs');
+const staticDir = fs.existsSync(clientDistPath)
+  ? clientDistPath
+  : fs.existsSync(docsPath)
+  ? docsPath
+  : null;
+
+if (staticDir) {
+  app.use(express.static(staticDir));
   app.get('*', (req, res) => {
-    res.sendFile(path.join(clientDistPath, 'index.html'));
+    res.sendFile(path.join(staticDir, 'index.html'));
   });
 }
 

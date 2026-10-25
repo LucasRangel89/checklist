@@ -1,14 +1,14 @@
-const CACHE_NAME = 'revalida-tracker-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icon.svg',
+const CACHE_NAME = 'revalida-tracker-pwa-v2';
+const CORE_ASSETS = [
+  './',
+  './index.html',
+  './manifest.webmanifest',
+  './icon.svg',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
   );
   self.skipWaiting();
 });
@@ -33,7 +33,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   // Network-first for API requests (with cache fallback for offline viewing)
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname.includes('/api/')) {
     event.respondWith(
       fetch(request)
         .then((response) => {
@@ -53,13 +53,13 @@ self.addEventListener('fetch', (event) => {
     caches.match(request).then((cached) => {
       const networkFetch = fetch(request)
         .then((response) => {
-          if (response.ok) {
+          if (response && response.ok && url.origin === self.location.origin) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
         })
-        .catch(() => cached || caches.match('/index.html'));
+        .catch(() => cached || caches.match('./index.html') || caches.match('./'));
 
       return cached || networkFetch;
     })

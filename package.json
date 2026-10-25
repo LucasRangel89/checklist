@@ -2,10 +2,10 @@
   "name": "revalida-tracker",
   "version": "1.0.0",
   "private": true,
-  "description": "Revalida Tracker — Preparação OSCE / INEP (Full-Stack + PWA)",
+  "description": "Revalida Tracker — Preparação OSCE / INEP (Full-Stack + PWA Offline)",
   "scripts": {
     "setup": "npm --prefix server install && npm --prefix client install && node server/seed.js",
-    "build": "npm --prefix client run build",
+    "build": "npm --prefix client run build && node scripts/sync-pwa.js",
     "start": "node server/index.js",
     "seed": "node server/seed.js"
   }
